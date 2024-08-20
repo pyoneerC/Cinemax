@@ -7,6 +7,9 @@ from passlib.handlers.sha2_crypt import sha256_crypt
 from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 
+from requests import Response
+from starlette.responses import JSONResponse
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 app = FastAPI()
@@ -36,9 +39,9 @@ async def login(username: str, password: str):
             user = cursor.fetchone()
             if user:
                 if sha256_crypt.verify(password, user["password_hash"]):
-                    return {"status": "success"}
+                    return JSONResponse(status_code=200, content={"message": "Login successful"})
                 else:
-                    return {"status": "failed"}
+                    return JSONResponse(status_code=401, content={"message": "Invalid password"})
     return user
 
 @app.post("/register")
@@ -55,7 +58,7 @@ async def register(username: str, password: str, first_name: str = None, last_na
             cursor.execute("SELECT * FROM Users WHERE username = %s", (username,))
             user = cursor.fetchone()
             if user:
-                return {"status": "failed", "message": "Username already exists"}
+                return JSONResponse(status_code=400, content={"message": "Username already exists"})
 
             country = data['country_name']
             city = data['city']
@@ -89,5 +92,5 @@ async def register(username: str, password: str, first_name: str = None, last_na
                 city,
             ))
         conn.commit()
-    return {"status": "success"}
+    return JSONResponse(status_code=201, content={"message": "User created successfully"})
 
