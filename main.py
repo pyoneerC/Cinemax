@@ -1,13 +1,11 @@
 import os
-
-import requests
-from fastapi import FastAPI, Depends
-import psycopg2
-from passlib.handlers.sha2_crypt import sha256_crypt
-from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 
-from requests import Response
+import psycopg2
+import requests
+from fastapi import FastAPI
+from passlib.handlers.sha2_crypt import sha256_crypt
+from psycopg2.extras import RealDictCursor
 from starlette.responses import JSONResponse
 
 DATABASE_URL = os.getenv("DATABASE_URL")
