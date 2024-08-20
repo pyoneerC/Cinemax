@@ -32,8 +32,13 @@ async def root():
 async def login(username: str, password: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM users WHERE username = %s AND password_hash = %s", (username, password))
+            cursor.execute("SELECT * FROM Users WHERE username = %s", (username,))
             user = cursor.fetchone()
+            if user:
+                if sha256_crypt.verify(password, user["password_hash"]):
+                    return {"status": "success"}
+                else:
+                    return {"status": "failed"}
     return user
 
 @app.post("/register")
@@ -42,9 +47,15 @@ async def register(username: str, password: str, first_name: str = None, last_na
         with conn.cursor() as cursor:
 
             password_hash = sha256_crypt.hash(password)
+
             url = 'https://api.ipgeolocation.io/ipgeo?apiKey=' + os.getenv('IPGEOLOCATION_API_KEY')
             response = requests.get(url)
             data = response.json()
+
+            cursor.execute("SELECT * FROM Users WHERE username = %s", (username,))
+            user = cursor.fetchone()
+            if user:
+                return {"status": "failed", "message": "Username already exists"}
 
             country = data['country_name']
             city = data['city']
