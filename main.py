@@ -92,3 +92,26 @@ async def register(username: str, password: str, first_name: str = None, last_na
         conn.commit()
     return JSONResponse(status_code=201, content={"message": "User created successfully"})
 
+@app.get("/profile")
+async def get_user(username: str, password: str = None):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM Users WHERE username = %s", (username,))
+            user = cursor.fetchone()
+
+    if not user:
+        return JSONResponse(status_code=404, content={"message": "User not found"})
+    else:
+
+        result = {
+            "username": user["username"],
+            "email": user["email"],
+            "first_name": user["first_name"],
+            "last_name": user["last_name"],
+            "profile_picture": user["profile_picture"],
+            "phone_number": user["phone_number"],
+            "is_email_verified": user["is_email_verified"],
+            "country": user["country"],
+        }
+
+        return JSONResponse(status_code=200, content=result)
