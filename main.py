@@ -1,4 +1,6 @@
 import os
+
+import requests
 from fastapi import FastAPI, Depends
 import psycopg2
 from passlib.handlers.sha2_crypt import sha256_crypt
@@ -35,10 +37,21 @@ async def login(username: str, password: str):
     return user
 
 @app.post("/register")
-async def register(username: str, password: str, first_name: str = None, last_name: str = None, phone_number: str = None, country: str = None, city: str = None):
+async def register(username: str, password: str, first_name: str = None, last_name: str = None, phone_number: str = None):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
+
             password_hash = sha256_crypt.hash(password)
+            url = 'https://api.ipgeolocation.io/ipgeo?apiKey=' + os.getenv('IPGEOLOCATION_API_KEY')
+            response = requests.get(url)
+            data = response.json()
+
+            country = data['country_name']
+            city = data['city']
+            ip = data['ip']
+            latitude = data['latitude']
+            longitude = data['longitude']
+
             cursor.execute("""
                 INSERT INTO Users (
                     username, email, password_hash, first_name, last_name, profile_picture,
@@ -58,9 +71,9 @@ async def register(username: str, password: str, first_name: str = None, last_na
                 False,
                 True,
                 '2024-08-19 10:00:00',
-                '192.168.1.1',
-                40.7128,
-                -74.0060,
+                ip,
+                latitude,
+                longitude,
                 country,
                 city,
             ))
