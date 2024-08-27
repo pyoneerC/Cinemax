@@ -87,3 +87,7 @@ async def process_tickets(tickets: list):
 @app.post("/candy")
 async def buy_candy(candy: dict):
     return candy
+
+@app.post("/checkout")
+async def checkout():
+    return {"message": "Checkout successful"}
