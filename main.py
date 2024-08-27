@@ -4,6 +4,7 @@ from contextlib import contextmanager
 import psycopg2
 from passlib.handlers.sha2_crypt import sha256_crypt
 from fastapi import FastAPI, HTTPException
+from psycopg2.extras import RealDictCursor
 from starlette.responses import JSONResponse
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -12,7 +13,7 @@ app = FastAPI()
 
 @contextmanager
 def get_db_connection():
-    connection = psycopg2.connect(DATABASE_URL)
+    connection = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     try:
         yield connection
     finally:
