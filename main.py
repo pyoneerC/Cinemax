@@ -2,25 +2,17 @@ import os
 from contextlib import contextmanager
 
 import psycopg2
-import requests
-from fastapi import FastAPI
 from passlib.handlers.sha2_crypt import sha256_crypt
-from psycopg2.extras import RealDictCursor
+from fastapi import FastAPI, HTTPException
 from starlette.responses import JSONResponse
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-
-# TODO Payments Gateway (mercadopago)
-# TODO Testing
-# TODO Basic Frontend (raw html)
-# TODO DB integration
-# TODO Dockerize
 
 app = FastAPI()
 
 @contextmanager
 def get_db_connection():
-    connection = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+    connection = psycopg2.connect(DATABASE_URL)
     try:
         yield connection
     finally:
@@ -34,120 +26,63 @@ async def root():
             version = cursor.fetchone()
     return {"database_version": version["version"]}
 
-
-@app.get("/login")
-async def login(username: str, password: str):
-    with get_db_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM Users WHERE username = %s", (username,))
-            user = cursor.fetchone()
-            if user:
-                if sha256_crypt.verify(password, user["password_hash"]):
-                    return JSONResponse(status_code=200, content={"message": "Login successful"})
-                else:
-                    return JSONResponse(status_code=401, content={"message": "Invalid password"})
-    return user
-
 @app.post("/register")
-async def register(username: str, password: str, first_name: str = None, last_name: str = None, phone_number: str = None):
+async def register(username: str, password: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-
             password_hash = sha256_crypt.hash(password)
-
-            url = 'https://api.ipgeolocation.io/ipgeo?apiKey=' + os.getenv('IPGEOLOCATION_API_KEY')
-            response = requests.get(url)
-            data = response.json()
-
             cursor.execute("SELECT * FROM Users WHERE username = %s", (username,))
-            user = cursor.fetchone()
-            if user:
-                return JSONResponse(status_code=400, content={"message": "Username already exists"})
+            if cursor.fetchone():
+                raise HTTPException(status_code=400, detail="Username already exists")
 
-            country = data['country_name']
-            city = data['city']
-            ip = data['ip']
-            latitude = data['latitude']
-            longitude = data['longitude']
-
-            cursor.execute("""
-                INSERT INTO Users (
-                    username, email, password_hash, first_name, last_name, profile_picture,
-                    phone_number, is_email_verified, is_active, last_login, ip_address,
-                    latitude, longitude, country, city
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-                )
-            """, (
-                username,
-                f"{username}@example.com",
-                password_hash,
-                first_name,
-                last_name,
-                'https://placehold.jp/200x200.png',
-                phone_number,
-                False,
-                True,
-                '2024-08-19 10:00:00',
-                ip,
-                latitude,
-                longitude,
-                country,
-                city,
-            ))
+            cursor.execute("INSERT INTO Users (username, password_hash) VALUES (%s, %s)", (username, password_hash))
         conn.commit()
     return JSONResponse(status_code=201, content={"message": "User created successfully"})
 
+@app.post("/login")
+async def login(username: str, password: str):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT password_hash FROM Users WHERE username = %s", (username,))
+            user = cursor.fetchone()
+            if not user or not sha256_crypt.verify(password, user["password_hash"]):
+                raise HTTPException(status_code=401, detail="Invalid username or password")
+    return JSONResponse(status_code=200, content={"message": "Login successful"})
+
 @app.get("/profile")
-async def get_user(username: str, password: str = None):
+async def get_user(username: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM Users WHERE username = %s", (username,))
             user = cursor.fetchone()
-
-    if not user:
-        return JSONResponse(status_code=404, content={"message": "User not found"})
-    else:
-
-        result = {
-            "username": user["username"],
-            "email": user["email"],
-            "first_name": user["first_name"],
-            "last_name": user["last_name"],
-            "profile_picture": user["profile_picture"],
-            "phone_number": user["phone_number"],
-            "is_email_verified": user["is_email_verified"],
-            "country": user["country"],
-        }
-
-        return JSONResponse(status_code=200, content=result)
-
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            result = {
+                "username": user["username"],
+            }
+    return result
 
 seats = set()
 MAX_SEATS = 200
 
 @app.post("/seats")
 async def select_seat(seat_number: int):
-    CURRENT_SEATS = len(seats)
+    if len(seats) >= MAX_SEATS:
+        raise HTTPException(status_code=400, detail="No more seats available")
 
-    if CURRENT_SEATS == MAX_SEATS:
-        return JSONResponse(status_code=400, content={"message": "No more seats available"})
-
-    if seat_number < 0 or seat_number > MAX_SEATS:
-        return JSONResponse(status_code=400, content={"message": "Invalid seat number"})
+    if seat_number < 0 or seat_number >= MAX_SEATS:
+        raise HTTPException(status_code=400, detail="Invalid seat number")
 
     if seat_number in seats:
-        return JSONResponse(status_code=400, content={"message": "Seat is already taken"})
+        raise HTTPException(status_code=400, detail="Seat is already taken")
 
     seats.add(seat_number)
     return JSONResponse(status_code=200, content={"message": "Seat selected successfully"})
 
 @app.post("/tickets")
 async def process_tickets(tickets: list):
-    total_seats = len(tickets)
-    return total_seats
+    return {"total_seats": len(tickets)}
 
 @app.post("/candy")
 async def buy_candy(candy: dict):
     return candy
-
