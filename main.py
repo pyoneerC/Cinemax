@@ -29,7 +29,7 @@ async def root():
     return {"database_version": version["version"]}
 
 
-@app.post("/login")
+@app.get("/login")
 async def login(username: str, password: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
@@ -115,3 +115,30 @@ async def get_user(username: str, password: str = None):
         }
 
         return JSONResponse(status_code=200, content=result)
+
+
+seats = set()
+MAX_SEATS = 200
+
+@app.post("/seats")
+async def select_seat(seat_number: int):
+    CURRENT_SEATS = len(seats)
+
+    if CURRENT_SEATS == MAX_SEATS:
+        return JSONResponse(status_code=400, content={"message": "No more seats available"})
+
+    if seat_number < 0 or seat_number > MAX_SEATS:
+        return JSONResponse(status_code=400, content={"message": "Invalid seat number"})
+
+    if seat_number in seats:
+        return JSONResponse(status_code=400, content={"message": "Seat is already taken"})
+
+    seats.add(seat_number)
+    return JSONResponse(status_code=200, content={"message": "Seat selected successfully"})
+#DB
+
+@app.post("/tickets")
+async def process_tickets(tickets: list):
+    total_seats = len(tickets)
+    return total_seats
+
