@@ -10,6 +10,12 @@ from starlette.responses import JSONResponse
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
+# TODO Payments Gateway (mercadopago)
+# TODO Testing
+# TODO Basic Frontend (raw html)
+# TODO DB integration
+# TODO Dockerize
+
 app = FastAPI()
 
 @contextmanager
@@ -135,10 +141,13 @@ async def select_seat(seat_number: int):
 
     seats.add(seat_number)
     return JSONResponse(status_code=200, content={"message": "Seat selected successfully"})
-#DB
 
 @app.post("/tickets")
 async def process_tickets(tickets: list):
     total_seats = len(tickets)
     return total_seats
+
+@app.post("/candy")
+async def buy_candy(candy: dict):
+    return candy
 
