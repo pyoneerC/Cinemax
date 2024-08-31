@@ -53,17 +53,14 @@ async def login(email: str, password: str):
     return JSONResponse(status_code=200, content={"message": "Login successful"})
 
 @app.get("/profile")
-async def get_user(username: str):
+async def get_user(email: str, password: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM Users WHERE username = %s", (username,))
+            cursor.execute("SELECT password_hash FROM Users WHERE email = %s", (email,))
             user = cursor.fetchone()
-            if not user:
+            if not user or not sha256_crypt.verify(password, user["password_hash"]):
                 raise HTTPException(status_code=404, detail="User not found")
-            result = {
-                "username": user["username"],
-            }
-    return result
+    return JSONResponse(status_code=200, content={"message": "User found"})
 
 seats = set()
 MAX_SEATS = 200
