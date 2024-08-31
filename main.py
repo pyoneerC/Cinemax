@@ -78,15 +78,3 @@ async def select_seat(seat_number: int):
 
     seats.add(seat_number)
     return JSONResponse(status_code=200, content={"message": "Seat selected successfully"})
-
-@app.post("/tickets")
-async def process_tickets(tickets: list):
-    return {"total_seats": len(tickets)}
-
-@app.post("/candy")
-async def buy_candy(candy: dict):
-    return candy
-
-@app.post("/checkout")
-async def checkout():
-    return {"message": "Checkout successful"}
