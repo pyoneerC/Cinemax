@@ -62,19 +62,21 @@ async def get_user(email: str, password: str):
                 raise HTTPException(status_code=404, detail="User not found")
     return JSONResponse(status_code=200, content={"message": "User found"})
 
-seats = set()
-MAX_SEATS = 200
+seats = []
+MAX_SEATS = 15
+
+# This should be able to recieve a list of [0 - 10] and confirm the selection
 
 @app.post("/seats")
 async def select_seat(seat_number: int):
-    if len(seats) >= MAX_SEATS:
-        raise HTTPException(status_code=400, detail="No more seats available")
-
     if seat_number < 0 or seat_number >= MAX_SEATS:
         raise HTTPException(status_code=400, detail="Invalid seat number")
+
+    if len(seats) >= MAX_SEATS:
+        raise HTTPException(status_code=400, detail="No more seats available")
 
     if seat_number in seats:
         raise HTTPException(status_code=400, detail="Seat is already taken")
 
-    seats.add(seat_number)
+    seats.append(seat_number)
     return JSONResponse(status_code=200, content={"message": "Seat selected successfully"})
