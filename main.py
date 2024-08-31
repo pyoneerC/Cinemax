@@ -52,19 +52,20 @@ async def login(email: str, password: str):
                 raise HTTPException(status_code=401, detail="Invalid username or password")
     return JSONResponse(status_code=200, content={"message": "Login successful"})
 
-# todo fix this
 @app.put("/reset")
 async def reset_password(email: str, password: str, new_password: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             email = email.replace("%40", "@")
+
             cursor.execute("SELECT password_hash FROM Users WHERE email = %s", (email,))
             user = cursor.fetchone()
-            if not user:
-                raise HTTPException(status_code=404, detail="User not found")
+            if not user or not sha256_crypt.verify(password, user["password_hash"]):
+                raise HTTPException(status_code=404, detail="User not found or incorrect password")
 
-            password_hash = sha256_crypt.hash(password)
-            cursor.execute("UPDATE Users SET password_hash = %s WHERE email = %s", (new_password, email))
+            new_password_hash = sha256_crypt.hash(new_password)
+            cursor.execute("UPDATE Users SET password_hash = %s WHERE email = %s", (new_password_hash, email))
+
         conn.commit()
         return JSONResponse(status_code=200, content={"message": "Password reset successfully"})
 
