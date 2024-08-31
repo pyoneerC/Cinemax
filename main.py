@@ -28,23 +28,25 @@ async def root():
     return {"database_version": version["version"]}
 
 @app.post("/register")
-async def register(username: str, password: str):
+async def register(email: str, password: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
+            email = email.replace("%40", "@")
             password_hash = sha256_crypt.hash(password)
-            cursor.execute("SELECT * FROM Users WHERE username = %s", (username,))
+            cursor.execute("SELECT * FROM Users WHERE email = %s", (email,))
             if cursor.fetchone():
                 raise HTTPException(status_code=400, detail="Username already exists")
 
-            cursor.execute("INSERT INTO Users (username, password_hash) VALUES (%s, %s)", (username, password_hash))
+            cursor.execute("INSERT INTO Users (email, password_hash) VALUES (%s, %s)", (email, password_hash))
         conn.commit()
     return JSONResponse(status_code=201, content={"message": "User created successfully"})
 
 @app.post("/login")
-async def login(username: str, password: str):
+async def login(email: str, password: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT password_hash FROM Users WHERE username = %s", (username,))
+            email = email.replace("%40", "@")
+            cursor.execute("SELECT password_hash FROM Users WHERE email = %s", (email,))
             user = cursor.fetchone()
             if not user or not sha256_crypt.verify(password, user["password_hash"]):
                 raise HTTPException(status_code=401, detail="Invalid username or password")
