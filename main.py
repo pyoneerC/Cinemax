@@ -44,7 +44,7 @@ async def register(email: str, password: str):
             password_hash = sha256_crypt.hash(password)
             cursor.execute("SELECT * FROM Users WHERE email = %s", (email,))
             if cursor.fetchone():
-                raise HTTPException(status_code=400, detail="Username already exists")
+                raise HTTPException(status_code=400, detail="Email already exists")
 
             cursor.execute("INSERT INTO Users (email, password_hash) VALUES (%s, %s)", (email, password_hash))
         conn.commit()
