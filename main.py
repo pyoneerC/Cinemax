@@ -42,7 +42,7 @@ async def register(email: str, password: str):
     return JSONResponse(status_code=201, content={"message": "User created successfully"})
 
 @app.post("/login")
-async def login(email: str, password: str):
+async def login(email: str, password: str, movie: str, time: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             email = email.replace("%40", "@")
