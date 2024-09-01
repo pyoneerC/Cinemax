@@ -82,11 +82,16 @@ async def reset_password(email: str, password: str, new_password: str):
 async def get_user(email: str, password: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT password_hash FROM Users WHERE email = %s", (email,))
+            cursor.execute("SELECT password_hash,email,created_at,id FROM Users WHERE email = %s", (email,))
             user = cursor.fetchone()
             if not user or not sha256_crypt.verify(password, user["password_hash"]):
                 raise HTTPException(status_code=404, detail="User not found")
-    return JSONResponse(status_code=200, content={"message": "User found"})
+            response= {
+                'email': user['email'],
+                'created_at': user['created_at'],
+                'id': user['id']
+            }
+    return response
 
 seats = []
 MAX_SEATS = 15
