@@ -58,8 +58,8 @@ async def login(email: str, password: str, movie: str, time: str):
             cursor.execute("SELECT password_hash FROM Users WHERE email = %s", (email,))
             user = cursor.fetchone()
             if not user or not sha256_crypt.verify(password, user["password_hash"]):
-                raise HTTPException(status_code=401, detail="Invalid username or password")
-    return JSONResponse(status_code=200, content={"message": "Login successful"})
+                raise HTTPException(status_code=401, detail="Incorrect email or password")
+    return JSONResponse(status_code=200, content={"message": True})
 
 @app.put("/reset")
 async def reset_password(email: str, password: str, new_password: str):
