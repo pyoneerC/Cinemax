@@ -5,11 +5,20 @@ import psycopg2
 from passlib.handlers.sha2_crypt import sha256_crypt
 from fastapi import FastAPI, HTTPException
 from psycopg2.extras import RealDictCursor
+from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @contextmanager
 def get_db_connection():
