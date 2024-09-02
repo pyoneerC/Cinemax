@@ -77,10 +77,11 @@ async def login(email: str, password: str, movie: str, time: str):
             )
             conn.commit()
 
-    return JSONResponse(status_code=200, content={"message": True,
-                                                  "transaction_id": transaction_id,
-                                                  "order_id": order_id
-                                                  })
+            response = {"message": True,
+                        "transaction_id": transaction_id,
+                        "order_id": order_id}
+
+    return response
 
 @app.post("/tickets")
 async def insert_tickets(num: int, transaction_id: str, order_id: str):
