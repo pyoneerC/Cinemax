@@ -77,7 +77,18 @@ async def login(email: str, password: str, movie: str, time: str):
             )
             conn.commit()
 
-    return JSONResponse(status_code=200, content={"message": True})
+    return JSONResponse(status_code=200, content={"message": True,
+                                                  "transaction_id": transaction_id,
+                                                  "order_id": order_id
+                                                  })
+
+@app.post("/tickets")
+async def insert_tickets(num: int, transaction_id: str, order_id: str):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("UPDATE Reservations SET tickets = %s WHERE transaction_id = %s AND order_id = %s", (num, transaction_id, order_id))
+        conn.commit()
+    return JSONResponse(status_code=201, content={"message": True})
 
 @app.put("/reset")
 async def reset_password(email: str, password: str, new_password: str):
@@ -110,11 +121,3 @@ async def get_user(email: str, password: str):
                 'id': user['id']
             }
     return response
-
-@app.post("/tickets")
-async def insert_tickets(num: int, email: str):
-    with get_db_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("UPDATE Reservations SET tickets = %s WHERE email = %s", (num, email))
-        conn.commit()
-    return JSONResponse(status_code=201, content={"message": True})
