@@ -99,6 +99,26 @@ async def insert_seats(seats: str, transaction_id: str, order_id: str):
         conn.commit()
     return JSONResponse(status_code=201, content={"message": True})
 
+@app.get("/reservation-details")
+async def get_reservation_details(transaction_id: str, order_id: str):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM Reservations WHERE transaction_id = %s AND order_id = %s", (transaction_id, order_id))
+            reservation = cursor.fetchone()
+            if not reservation:
+                raise HTTPException(status_code=404, detail="Reservation not found")
+            response = {
+                "email": reservation["email"],
+                "movie": reservation["movie"],
+                "reservation_date": reservation["reservation_date"],
+                "reservation_time": reservation["reservation_time"],
+                "tickets": reservation["tickets"],
+                "seats": reservation["seats"],
+                "transaction_id": reservation["transaction_id"],
+                "order_id": reservation["order_id"]
+            }
+    return response
+
 @app.put("/reset")
 async def reset_password(email: str, password: str, new_password: str):
     with get_db_connection() as conn:
@@ -138,3 +158,7 @@ async def get_user(email: str, password: str):
 #       AND created_at < NOW() - INTERVAL '5 minutes';
 # END;
 # $$ LANGUAGE plpgsql; add this later
+
+# i need to upload the price to the db in reservations
+# disable all buttons in payment Transaction ID or Order ID not found in local storage.
+# add in all pages button to window.back()
