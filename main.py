@@ -160,5 +160,6 @@ async def get_user(email: str, password: str):
 # $$ LANGUAGE plpgsql; add this later
 
 # i need to upload the price to the db in reservations
-# disable all buttons in payment Transaction ID or Order ID not found in local storage.
-# add in all pages button to window.back()
+# por cada pagina que avanza el usuario le sumamos 2 punto, en tickets tiene que tener 3 otherwise lo llevamos a index, porque
+# aunque no vaya a afectar la base puede interactuar con la aplicacion y no queremos eso. poner un point count en la db y ver si es el correcto para navegar las distintas paginas
+# login == puntaje 2 , tickets ==3 otherwise alert(stop right there! and href to index.html
