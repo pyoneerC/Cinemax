@@ -91,6 +91,14 @@ async def insert_tickets(num: int, transaction_id: str, order_id: str):
         conn.commit()
     return JSONResponse(status_code=201, content={"message": True})
 
+@app.post("/seats")
+async def insert_seats(seats: str, transaction_id: str, order_id: str):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("UPDATE Reservations SET seats = %s WHERE transaction_id = %s AND order_id = %s", (seats, transaction_id, order_id))
+        conn.commit()
+    return JSONResponse(status_code=201, content={"message": True})
+
 @app.put("/reset")
 async def reset_password(email: str, password: str, new_password: str):
     with get_db_connection() as conn:
