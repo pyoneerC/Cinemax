@@ -121,3 +121,11 @@ async def get_user(email: str, password: str):
                 'id': user['id']
             }
     return response
+
+# CREATE OR REPLACE FUNCTION cleanup_old_reservations() RETURNS void AS $$
+# BEGIN
+#     DELETE FROM Reservations
+#     WHERE tickets = 0
+#       AND created_at < NOW() - INTERVAL '5 minutes';
+# END;
+# $$ LANGUAGE plpgsql; add this later
