@@ -1,3 +1,4 @@
+import uuid
 import os
 from contextlib import contextmanager
 
@@ -64,12 +65,15 @@ async def login(email: str, password: str, movie: str, time: str):
 
             user_id = user["id"]
 
+            transaction_id = 'TX_' + uuid.uuid4().hex[:9].upper()
+            order_id = 'ORD_' + uuid.uuid4().hex[:9].upper()
+
             cursor.execute(
                 """
-                INSERT INTO Reservations (user_id, email, movie, reservation_time)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO Reservations (user_id, email, movie, reservation_time, transaction_id, order_id)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 """,
-                (user_id, email, movie, time)
+                (user_id, email, movie, time, transaction_id, order_id)
             )
             conn.commit()
 
@@ -107,35 +111,10 @@ async def get_user(email: str, password: str):
             }
     return response
 
-
-@app.post("/profile")
-async def update_user(email: str, password: str, username: str = None, first_name: str = None,
-                      last_name: str = None, phone_number: str = None, is_email_verified: bool = False):
-    with get_db_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT password_hash FROM Users WHERE email = %s", (email,))
-            user = cursor.fetchone()
-
-            if not user or not sha256_crypt.verify(password, user["password_hash"]):
-                raise HTTPException(status_code=404, detail="User not found or incorrect password")
-
-            cursor.execute("""
-                UPDATE Users
-                SET username = COALESCE(%s, username),
-                    first_name = COALESCE(%s, first_name),
-                    last_name = COALESCE(%s, last_name),
-                    phone_number = COALESCE(%s, phone_number),
-                    is_email_verified = %s
-                WHERE email = %s
-            """, (username, first_name, last_name, phone_number, is_email_verified, email))
-            conn.commit()
-
-    return JSONResponse(status_code=200, content={"message": "Profile updated successfully"})
-
 @app.post("/tickets")
-async def insert_tickets(num: int):
+async def insert_tickets(num: int, email: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute("INSERT INTO reservations (tickets) VALUES (%s)", (num,))
+            cursor.execute("UPDATE Reservations SET tickets = %s WHERE email = %s", (num, email))
         conn.commit()
     return JSONResponse(status_code=201, content={"message": True})
