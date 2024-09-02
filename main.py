@@ -55,10 +55,24 @@ async def login(email: str, password: str, movie: str, time: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             email = email.replace("%40", "@")
-            cursor.execute("SELECT password_hash FROM Users WHERE email = %s", (email,))
+
+            cursor.execute("SELECT id, password_hash FROM Users WHERE email = %s", (email,))
             user = cursor.fetchone()
+
             if not user or not sha256_crypt.verify(password, user["password_hash"]):
                 raise HTTPException(status_code=401, detail="Incorrect email or password")
+
+            user_id = user["id"]
+
+            cursor.execute(
+                """
+                INSERT INTO Reservations (user_id, email, movie, reservation_time)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (user_id, email, movie, time)
+            )
+            conn.commit()
+
     return JSONResponse(status_code=200, content={"message": True})
 
 @app.put("/reset")
@@ -92,22 +106,3 @@ async def get_user(email: str, password: str):
                 'id': user['id']
             }
     return response
-
-seats = []
-MAX_SEATS = 15
-
-# This should be able to recieve a list of [0 - 10] and confirm the selection
-
-@app.post("/seats")
-async def select_seat(seat_number: int):
-    if seat_number < 0 or seat_number >= MAX_SEATS:
-        raise HTTPException(status_code=400, detail="Invalid seat number")
-
-    if len(seats) >= MAX_SEATS:
-        raise HTTPException(status_code=400, detail="No more seats available")
-
-    if seat_number in seats:
-        raise HTTPException(status_code=400, detail="Seat is already taken")
-
-    seats.append(seat_number)
-    return JSONResponse(status_code=200, content={"message": "Seat selected successfully"})
