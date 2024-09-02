@@ -106,3 +106,11 @@ async def get_user(email: str, password: str):
                 'id': user['id']
             }
     return response
+
+@app.post("/tickets")
+async def insert_tickets(num: int):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("INSERT INTO reservations (tickets) VALUES (%s)", (num,))
+        conn.commit()
+    return JSONResponse(status_code=201, content={"message": True})
