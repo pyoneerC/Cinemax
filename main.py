@@ -107,6 +107,34 @@ async def get_user(email: str, password: str):
             }
     return response
 
+
+@app.post("/profile")
+async def update_user(email: str, password: str, username: str, first_name: str, last_name: str, phone_number: str,
+                      is_email_verified: bool):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT password_hash FROM Users WHERE email = %s", (email,))
+            user = cursor.fetchone()
+
+            if not user or not sha256_crypt.verify(password, user["password_hash"]):
+                raise HTTPException(status_code=404, detail="User not found")
+
+            cursor.execute(
+                """
+                UPDATE Users 
+                SET username = %s, 
+                    first_name = %s, 
+                    last_name = %s, 
+                    phone_number = %s, 
+                    is_email_verified = %s 
+                WHERE email = %s
+                """,
+                (username, first_name, last_name, phone_number, is_email_verified, email)
+            )
+            conn.commit()
+
+    return JSONResponse(status_code=200, content={"message": True})
+
 @app.post("/tickets")
 async def insert_tickets(num: int):
     with get_db_connection() as conn:
