@@ -127,6 +127,30 @@ async def get_reservation_details(transaction_id: str, order_id: str):
             }
     return response
 
+@app.get("/all-user-reservations")
+async def get_all_user_reservations(email: str):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM Reservations WHERE email = %s", (email,))
+            reservations = cursor.fetchall()
+            if not reservations:
+                raise HTTPException(status_code=404, detail="Reservations not found")
+            response = []
+            for reservation in reservations:
+                response.append({
+                    "email": reservation["email"],
+                    "movie": reservation["movie"],
+                    "reservation_date": reservation["reservation_date"],
+                    "reservation_time": reservation["reservation_time"],
+                    "tickets": reservation["tickets"],
+                    "seats": reservation["seats"],
+                    "transaction_id": reservation["transaction_id"],
+                    "order_id": reservation["order_id"],
+                    "price": reservation["price"],
+                    "payment_succeeded": reservation["payment_succeeded"]
+                })
+    return response
+
 @app.put("/reset")
 async def reset_password(email: str, password: str, new_password: str):
     with get_db_connection() as conn:
@@ -203,4 +227,4 @@ async def update_payment_status(transaction_id: str, order_id: str):
 # discount applied column? true/false default false
 # price with discount column default null
 
-# in profile put see all my reservations
+# css and decorations
