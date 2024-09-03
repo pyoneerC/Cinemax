@@ -220,11 +220,42 @@ async def update_payment_status(transaction_id: str, order_id: str):
         conn.commit()
     return JSONResponse(status_code=201, content={"message": True})
 
-# por cada pagina que avanza el usuario le sumamos 2 punto, en tickets tiene que tener 3 otherwise lo llevamos a index, porque
-# aunque no vaya a afectar la base puede interactuar con la aplicacion y no queremos eso. poner un point count en la db y ver si es el correcto para navegar las distintas paginas
-# login == puntaje 2 , tickets ==3 otherwise alert(stop right there! and href to index.html
+@app.put("/step_count")
+async def step_count(email: str, password: str):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT password_hash FROM Users WHERE email = %s", (email,))
+            user = cursor.fetchone()
+
+            if not user or not sha256_crypt.verify(password, user["password_hash"]):
+                raise HTTPException(status_code=404, detail="User not found or incorrect password")
+
+            cursor.execute("UPDATE reservations SET step_count = step_count + 1 WHERE email = %s", (email,))
+            conn.commit()
+
+    return JSONResponse(status_code=200, content={"message": True})
+
+@app.get("/step_count")
+async def get_step_count(transaction_id: str, order_id: str):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT step_count FROM Reservations WHERE transaction_id = %s AND order_id = %s", (transaction_id, order_id))
+            step_count = cursor.fetchone()
+            if not step_count:
+                raise HTTPException(status_code=404, detail="Step count not found")
+            response = {
+                "step_count": step_count["step_count"]
+            }
+    return response
 
 # discount applied column? true/false default false
+# discount % column default null example 0.3
 # price with discount column default null
+
+# if discount applied is true then we must show that price with discount,not the original price, or the original strike through and the discounted price
+# if discount applied is false then we show the original
+# we cam show discount % * 100 next to the price
+
+# complete the steps thingy in all pages we go ++i so no one can go directly to payments.html for example, they get redirected to index.html
 
 # css and decorations
