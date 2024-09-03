@@ -188,10 +188,19 @@ async def update_user(email: str, password: str, username: str, first_name: str,
 
     return JSONResponse(status_code=200, content={"message": "Profile updated successfully"})
 
+@app.post("/payment-status")
+async def update_payment_status(transaction_id: str, order_id: str):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("UPDATE Reservations SET payment_succeeded = true WHERE transaction_id = %s AND order_id = %s", (transaction_id, order_id))
+        conn.commit()
+    return JSONResponse(status_code=201, content={"message": True})
+
 # por cada pagina que avanza el usuario le sumamos 2 punto, en tickets tiene que tener 3 otherwise lo llevamos a index, porque
 # aunque no vaya a afectar la base puede interactuar con la aplicacion y no queremos eso. poner un point count en la db y ver si es el correcto para navegar las distintas paginas
 # login == puntaje 2 , tickets ==3 otherwise alert(stop right there! and href to index.html
 
 # discount applied column? true/false default false
 # price with discount column default null
-# payment succeeded? column true false default false
+
+# in profile put see all my reservations
