@@ -123,7 +123,10 @@ async def get_reservation_details(transaction_id: str, order_id: str):
                 "seats": reservation["seats"],
                 "transaction_id": reservation["transaction_id"],
                 "order_id": reservation["order_id"],
-                "price": reservation["price"]
+                "price": reservation["price"],
+                "discount_applied": reservation["discount_applied"],
+                "discount_amount": reservation["discount_amount"],
+                "total_discounted_price": reservation["total_disounted_price"],
             }
     return response
 
@@ -147,7 +150,8 @@ async def get_all_user_reservations(email: str):
                     "transaction_id": reservation["transaction_id"],
                     "order_id": reservation["order_id"],
                     "price": reservation["price"],
-                    "payment_succeeded": reservation["payment_succeeded"]
+                    "payment_succeeded": reservation["payment_succeeded"],
+                    "reservation_date": reservation["reservation_date"],
                 })
     return response
 
@@ -255,15 +259,3 @@ async def get_step_count(transaction_id: str, order_id: str):
                 "step_count": step_count["step_count"]
             }
     return response
-
-# discount applied column? true/false default false
-# discount % column default null example 0.3
-# price with discount column default null
-
-# if discount applied is true then we must show that price with discount,not the original price, or the original strike through and the discounted price
-# if discount applied is false then we show the original
-# we cam show discount % * 100 next to the price
-
-# complete the steps thingy in all pages we go ++i so no one can go directly to payments.html for example, they get redirected to index.html
-
-# css and decorations
