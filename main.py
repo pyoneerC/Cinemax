@@ -235,6 +235,14 @@ async def step_count(email: str, password: str):
 
     return JSONResponse(status_code=200, content={"message": True})
 
+@app.put("/discount")
+async def discount(transaction_id: str, order_id: str, price: int, discount_percentage: float):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("UPDATE Reservations SET discount_applied = true, discount_amount = %s, total_disounted_price = %s WHERE transaction_id = %s AND order_id = %s", (discount_percentage, price - (price * discount_percentage), transaction_id, order_id))
+        conn.commit()
+    return JSONResponse(status_code=200, content={"message": True})
+
 @app.get("/step_count")
 async def get_step_count(transaction_id: str, order_id: str):
     with get_db_connection() as conn:
