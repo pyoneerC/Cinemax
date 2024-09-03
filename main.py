@@ -84,10 +84,17 @@ async def login(email: str, password: str, movie: str, time: str):
     return response
 
 @app.post("/tickets")
-async def insert_tickets(num: int, transaction_id: str, order_id: str):
+async def insert_tickets(num: int, price: int, transaction_id: str, order_id: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute("UPDATE Reservations SET tickets = %s WHERE transaction_id = %s AND order_id = %s", (num, transaction_id, order_id))
+            cursor.execute(
+                """
+                UPDATE Reservations
+                SET tickets = %s, price = %s
+                WHERE transaction_id = %s AND order_id = %s
+                """,
+                (num, price, transaction_id, order_id)
+            )
         conn.commit()
     return JSONResponse(status_code=201, content={"message": True})
 
@@ -163,3 +170,5 @@ async def get_user(email: str, password: str):
 # por cada pagina que avanza el usuario le sumamos 2 punto, en tickets tiene que tener 3 otherwise lo llevamos a index, porque
 # aunque no vaya a afectar la base puede interactuar con la aplicacion y no queremos eso. poner un point count en la db y ver si es el correcto para navegar las distintas paginas
 # login == puntaje 2 , tickets ==3 otherwise alert(stop right there! and href to index.html
+
+# put profile bear also in seats, payment, and receipt
