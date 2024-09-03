@@ -148,28 +148,50 @@ async def reset_password(email: str, password: str, new_password: str):
 async def get_user(email: str, password: str):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT password_hash,email,created_at,id FROM Users WHERE email = %s", (email,))
+            cursor.execute("SELECT password_hash,email,created_at,id,username,first_name,last_name,phone_number,is_email_verified FROM Users WHERE email = %s", (email,))
             user = cursor.fetchone()
             if not user or not sha256_crypt.verify(password, user["password_hash"]):
                 raise HTTPException(status_code=404, detail="User not found")
             response= {
                 'email': user['email'],
                 'created_at': user['created_at'],
-                'id': user['id']
+                'id': user['id'],
+                'username': user['username'],
+                'first_name': user['first_name'],
+                'last_name': user['last_name'],
+                'phone_number': user['phone_number'],
+                'is_email_verified': user['is_email_verified']
             }
     return response
 
-# CREATE OR REPLACE FUNCTION cleanup_old_reservations() RETURNS void AS $$
-# BEGIN
-#     DELETE FROM Reservations
-#     WHERE tickets = 0
-#       AND created_at < NOW() - INTERVAL '5 minutes';
-# END;
-# $$ LANGUAGE plpgsql; add this later
+@app.put("/profile")
+async def update_user(email: str, password: str, username: str, first_name: str,
+                      last_name: str, phone_number: str, is_email_verified: bool):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT password_hash FROM Users WHERE email = %s", (email,))
+            user = cursor.fetchone()
 
-# i need to upload the price to the db in reservations
+            if not user or not sha256_crypt.verify(password, user["password_hash"]):
+                raise HTTPException(status_code=404, detail="User not found or incorrect password")
+
+            cursor.execute("""
+                UPDATE Users
+                SET username = %s,
+                    first_name = %s,
+                    last_name = %s,
+                    phone_number = %s,
+                    is_email_verified = %s
+                WHERE email = %s
+            """, (username, first_name, last_name, phone_number, is_email_verified, email))
+            conn.commit()
+
+    return JSONResponse(status_code=200, content={"message": "Profile updated successfully"})
+
 # por cada pagina que avanza el usuario le sumamos 2 punto, en tickets tiene que tener 3 otherwise lo llevamos a index, porque
 # aunque no vaya a afectar la base puede interactuar con la aplicacion y no queremos eso. poner un point count en la db y ver si es el correcto para navegar las distintas paginas
 # login == puntaje 2 , tickets ==3 otherwise alert(stop right there! and href to index.html
 
-# put profile bear also in seats, payment, and receipt
+# discount applied column? true/false default false
+# price with discount column default null
+# payment succeeded? column true false default false

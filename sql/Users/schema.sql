@@ -18,7 +18,5 @@ CREATE TABLE IF NOT EXISTS Users (
     country VARCHAR(50),
     city VARCHAR(50),
 
-    CONSTRAINT chk_username_format CHECK (username ~* '^[a-z0-9_]{3,50}$'),
-    CONSTRAINT chk_email_format CHECK (email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$'),
-    CONSTRAINT chk_phone_number_format CHECK (phone_number ~* '^[+]*[(]?[0-9]{1,4}[)]?[-\s./0-9]*$')
+    CONSTRAINT chk_email_format CHECK (email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$')
 );
