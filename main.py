@@ -122,7 +122,8 @@ async def get_reservation_details(transaction_id: str, order_id: str):
                 "tickets": reservation["tickets"],
                 "seats": reservation["seats"],
                 "transaction_id": reservation["transaction_id"],
-                "order_id": reservation["order_id"]
+                "order_id": reservation["order_id"],
+                "price": reservation["price"]
             }
     return response
 
